@@ -91,7 +91,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         // If the IP has changed, update the config and send an email
         else {
             println!("IP has changed! Old: {}, New: {}", config.ip_address, public_ip);
-            json_handler::write_config("ip_address", Value::String(public_ip.clone()));
+            json_handler::write_config("ipAddress", Value::String(public_ip.clone()));
             let _ = send_email(config.clone(), public_ip);
         }
 
