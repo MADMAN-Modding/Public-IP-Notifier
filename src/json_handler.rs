@@ -349,13 +349,13 @@ pub fn reset_config() {
 /// Default settings for the config
 fn get_default_config() -> Value {
     json!({
-        "email_address": "me@example.com",
-        "email_password": "1243124231",
-        "email_smtp_host": "smtp.example.com",
-        "email_smtp_port": 465,
-        "recipient_address": "person@example.com",
-        "check_interval_minutes": 15,
-        "ip_address": "127.0.0.1"
+        "emailAddress": "me@example.com",
+        "emailPassword": "1243124231",
+        "emailSMTPHost": "smtp.example.com",
+        "emailSMTPPort": 465,
+        "recipientAddress": "person@example.com",
+        "checkIntervalMinutes": 15,
+        "ipAddress": "127.0.0.1"
     })
 }
 
@@ -374,13 +374,13 @@ pub trait ToConfig {
 impl ToConfig for serde_json::Value {
     fn to_config(&self) -> Config {
         // Extract each field from the JSON value, providing defaults if necessary
-        let email_address = self.get("email_address").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let email_password = self.get("email_password").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let email_smtp_host = self.get("email_smtp_host").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let email_smtp_port = self.get("email_smtp_port").and_then(|v| v.as_u64()).unwrap_or(587) as u16;
-        let recipient_address = self.get("recipient_address").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let check_interval_minutes = self.get("check_interval_minutes").and_then(|v| v.as_u64()).unwrap_or(5);
-        let ip_address = self.get("ip_address").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let email_address = self.get("emailAddress").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let email_password = self.get("emailPassword").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let email_smtp_host = self.get("emailSMTPHost").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let email_smtp_port = self.get("emailSMTPPort").and_then(|v| v.as_u64()).unwrap_or(587) as u16;
+        let recipient_address = self.get("recipientAddress").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let check_interval_minutes = self.get("checkIntervalMinutes").and_then(|v| v.as_u64()).unwrap_or(5);
+        let ip_address = self.get("ipAddress").and_then(|v| v.as_str()).unwrap_or_default().to_string();
 
         Config::new(
             email_address,

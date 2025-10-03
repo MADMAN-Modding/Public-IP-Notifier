@@ -11,6 +11,59 @@ use serde_json::Value;
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     constants::setup();
 
+    let cli_args = std::env::args().collect::<Vec<String>>();
+    
+
+    if cli_args.len() > 1 {
+
+        match cli_args[1].as_str() {
+            "-h" => {
+                help();
+            }
+            "-c" => {
+                if cli_args.len() != 4 {
+                    eprintln!("Error: -c requires exactly 2 arguments: <property> <value>\nSee -h for more info.");
+                    return Ok(());
+                }
+                let property = &cli_args[2];
+                let value = &cli_args[3];
+
+                match property.as_str() {
+                    "emailSMTPPort" | "checkIntervalMinutes" => {
+                        // Check if value is a valid u64
+                        if value.parse::<u64>().is_err() {
+                            eprintln!("Error: {} must be a valid u64 integer.", property);
+                            return Ok(());
+                        }
+
+                        // Port number check
+                        if property == "email_smtp_port" && (value.parse::<u64>().unwrap() > 65535) {
+                            eprintln!("Error: email_smtp_port must be between 1 and 65535.");
+                            return Ok(());
+                        }
+
+                        // All checks passed
+                        json_handler::write_config(property, Value::Number(value.parse::<u64>().unwrap().into()));
+                        return Ok(());
+                    }
+                    _ => json_handler::write_config(property, Value::String(value.to_string()))
+                }
+            }
+            "-p" => {
+                let config = json_handler::read_json_as_value(&constants::get_config_path()).to_config();
+                config.print();
+            }
+            "-t" => {
+                let config = json_handler::read_json_as_value(&constants::get_config_path()).to_config();
+                let ip = ip_check::get_public_ip().unwrap_or("0.0.0.0".into());
+                let _ = send_email(config, ip);
+            }
+            _ => {}
+        }
+
+        return Ok(());
+    }
+
     loop {
         // The config is read in each loop to allow for dynamic changes
         let config = json_handler::read_json_as_value(&constants::get_config_path()).to_config();
@@ -77,4 +130,11 @@ fn send_email(config: Config, new_ip_address: String) -> std::result::Result<(),
         Err(e) => eprintln!("Could not send email: {:?}", e),
     };
     Ok(())
+}
+
+fn help() {
+    println!("Display this message: -h");
+    println!("Set the value of something in the config: -c <property> <value>\nemail_address, email_password, email_smtp_host, email_smtp_port, ip_address, recipient_address");
+    println!("Print config: -p");
+    println!("Send test email: -t");
 }
