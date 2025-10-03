@@ -22,7 +22,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let public_ip = match ip_check::get_public_ip() {
             Ok(ip) => ip,
             Err(e) => {
-                eprintln!("Error getting public IP: {}", e);
+                eprintln!("Error getting public IP: {:?}", e);
                 sleep(Duration::from_secs(config.check_interval_minutes * 60));
                 continue;
             }
@@ -34,20 +34,20 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         // If the IP hasn't changed, wait and check again
         if public_ip == config.ip_address {
             println!("IP has not changed.");
-
-            sleep(Duration::from_secs(config.check_interval_minutes * 60));
-            continue;
         } 
         // If the IP has changed, update the config and send an email
         else {
             println!("IP has changed! Old: {}, New: {}", config.ip_address, public_ip);
-            json_handler::write_config("ip_address", Value::String(public_ip));
-            let _ = send_email(config);
+            json_handler::write_config("ip_address", Value::String(public_ip.clone()));
+            let _ = send_email(config.clone(), public_ip);
         }
+
+        // Wait for the specified interval before checking again
+        sleep(Duration::from_secs(&config.check_interval_minutes * 60));
     }
 }
 
-fn send_email(config: Config) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn send_email(config: Config, new_ip_address: String) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Define the email
     let email = Message::builder()
         .from(
@@ -55,11 +55,11 @@ fn send_email(config: Config) -> std::result::Result<(), Box<dyn std::error::Err
                 .parse()
                 .unwrap(),
         )
-        .to(format!("Recipient Name <{}>", config.recipient_address)
+        .to(format!("{}", config.recipient_address)
             .parse()
             .unwrap())
         .subject("Your IP Changed!")
-        .body(String::from("Hello, this is a test email from Rust!"))
+        .body(format!("Hello,\nYour public IP has changed to {}.", new_ip_address)) 
         .unwrap();
 
     // Set up the SMTP client
