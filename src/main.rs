@@ -134,7 +134,7 @@ fn send_email(config: Config, new_ip_address: String) -> std::result::Result<(),
 
 fn help() {
     println!("Display this message: -h");
-    println!("Set the value of something in the config: -c <property> <value>\nemailAddress, emailPassword, emailSmtpHost, emailSmtpPort, ipAddress, recipientAddress");
+    println!("Set the value of something in the config: -c <property> <value>\nemailAddress, emailPassword, emailSMTPHost, emailSMTPPort, ipAddress, recipientAddress");
     println!("Print config: -p");
     println!("Send test email: -t");
 }
