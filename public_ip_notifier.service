@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Public IP Notifier
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ip_notif
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

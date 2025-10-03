@@ -1,9 +1,9 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use ip_update_checker::config::Config;
-use ip_update_checker::json_handler::ToConfig;
-use ip_update_checker::{constants, ip_check, json_handler};
+use public_ip_notifier::config::Config;
+use public_ip_notifier::json_handler::ToConfig;
+use public_ip_notifier::{constants, ip_check, json_handler};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use serde_json::Value;
