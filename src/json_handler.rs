@@ -349,8 +349,13 @@ pub fn reset_config() {
 /// Default settings for the config
 fn get_default_config() -> Value {
     json!({
-        "frontendLangs": ["Native JavaScript", "React", "TypeScript"],
-        "backendLangs": ["Rust", "C++", "Java", "Python"]
+        "email_address": "me@example.com",
+        "email_password": "1243124231",
+        "email_smtp_host": "smtp.example.com",
+        "email_smtp_port": 587,
+        "recipient_address": "person@example.com",
+        "check_interval_minutes": 15,
+        "ip_address": "127.0.0.1"
     })
 }
 

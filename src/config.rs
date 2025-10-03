@@ -70,4 +70,19 @@ impl Config {
         println!("Check Interval (minutes): {}", self.check_interval_minutes);
         println!("Last Known IP Address: {}", self.ip_address);
     }
+
+    /// Converts the `Config` instance to a JSON value.
+    /// # Returns
+    /// * `serde_json::Value` - A JSON representation of the `Config` instance
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "email_address": self.email_address,
+            "email_password": self.email_password,
+            "email_smtp_host": self.email_smtp_host,
+            "email_smtp_port": self.email_smtp_port,
+            "recipient_address": self.recipient_address,
+            "check_interval_minutes": self.check_interval_minutes,
+            "ip_address": self.ip_address,
+        })
+    }
 }
