@@ -25,6 +25,10 @@ pub struct Config {
     pub check_interval_minutes: u64,
     /// The last known IP address.
     pub ip_address: String,
+    /// The number of sequential failures in checking the IP address.
+    pub sequential_failures: u32,
+    /// The threshold of sequential failures before sending an alert email.
+    pub failure_threshold: u32,
 }
 
 impl Config {
@@ -48,6 +52,8 @@ impl Config {
         recipient_address: String,
         check_interval_minutes: u64,
         ip_address: String,
+        sequential_failures: u32,
+        failure_threshold: u32,
     ) -> Self {
         Config {
             email_address,
@@ -57,6 +63,8 @@ impl Config {
             recipient_address,
             check_interval_minutes,
             ip_address,
+            sequential_failures,
+            failure_threshold,
         }
     }
 

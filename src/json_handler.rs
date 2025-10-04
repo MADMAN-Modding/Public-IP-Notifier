@@ -54,6 +54,10 @@ pub fn read_json_as_value(path: &str) -> Value {
     open_json(path).clone()
 }
 
+pub fn read_config_value(key: &str) -> Value {
+    read_json(key, &constants::get_config_path())
+}
+
 /// Reads the supplied `Value` and returns the value of the provided key
 ///
 /// # Arguments
@@ -63,7 +67,7 @@ pub fn read_json_as_value(path: &str) -> Value {
 /// #Returns
 /// * 'Value' - The data at the desired key
 pub fn read_json_from_ref(key: &str, json: &Value) -> Value {
-    json.get(key).unwrap().clone()
+    json.get(key).unwrap_or(&Value::Null).clone()
 }
 
 /// Opens the json file with the supplied path
@@ -381,6 +385,8 @@ impl ToConfig for serde_json::Value {
         let recipient_address = self.get("recipientAddress").and_then(|v| v.as_str()).unwrap_or_default().to_string();
         let check_interval_minutes = self.get("checkIntervalMinutes").and_then(|v| v.as_u64()).unwrap_or(5);
         let ip_address = self.get("ipAddress").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let sequential_failures = self.get("sequentialFailures").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+        let failure_threshold = self.get("failureThreshold").and_then(|v| v.as_u64()).unwrap_or(3) as u32;
 
         Config::new(
             email_address,
@@ -390,6 +396,8 @@ impl ToConfig for serde_json::Value {
             recipient_address,
             check_interval_minutes,
             ip_address,
+            sequential_failures,
+            failure_threshold,
         )
     }
 }

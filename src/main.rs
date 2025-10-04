@@ -1,60 +1,65 @@
 use std::thread::sleep;
 use std::time::Duration;
 
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 use public_ip_notifier::config::Config;
 use public_ip_notifier::json_handler::ToConfig;
 use public_ip_notifier::{constants, ip_check, json_handler};
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{Message, SmtpTransport, Transport};
 use serde_json::Value;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     constants::setup();
 
     let cli_args = std::env::args().collect::<Vec<String>>();
-    
 
     if cli_args.len() > 1 {
-
         match cli_args[1].as_str() {
             "-h" => {
                 help();
             }
             "-c" => {
                 if cli_args.len() != 4 {
-                    eprintln!("Error: -c requires exactly 2 arguments: <property> <value>\nSee -h for more info.");
+                    eprintln!(
+                        "Error: -c requires exactly 2 arguments: <property> <value>\nSee -h for more info."
+                    );
                     return Ok(());
                 }
                 let property = &cli_args[2];
                 let value = &cli_args[3];
 
                 match property.as_str() {
-                    "emailSMTPPort" | "checkIntervalMinutes" => {
+                    "emailSMTPPort" | "checkIntervalMinutes" | "failureThreshold" => {
                         // Check if value is a valid u64
                         if value.parse::<u64>().is_err() {
                             eprintln!("Error: {} must be a valid u64 integer.", property);
-                            return Ok(());
                         }
 
                         // Port number check
-                        if property == "email_smtp_port" && (value.parse::<u64>().unwrap() > 65535) {
+                        if property == "email_smtp_port" && (value.parse::<u64>().unwrap() > 65535)
+                        {
                             eprintln!("Error: email_smtp_port must be between 1 and 65535.");
-                            return Ok(());
                         }
 
                         // All checks passed
-                        json_handler::write_config(property, Value::Number(value.parse::<u64>().unwrap().into()));
-                        return Ok(());
+                        json_handler::write_config(
+                            property,
+                            Value::Number(value.parse::<u64>().unwrap().into()),
+                        );
                     }
-                    _ => json_handler::write_config(property, Value::String(value.to_string()))
+                    _ => json_handler::write_config(property, Value::String(value.to_string())),
                 }
+                println!("Set {} to {}", property, value);
+                return  Ok(());
             }
             "-p" => {
-                let config = json_handler::read_json_as_value(&constants::get_config_path()).to_config();
+                let config =
+                    json_handler::read_json_as_value(&constants::get_config_path()).to_config();
                 config.print();
             }
             "-t" => {
-                let config = json_handler::read_json_as_value(&constants::get_config_path()).to_config();
+                let config =
+                    json_handler::read_json_as_value(&constants::get_config_path()).to_config();
                 let ip = ip_check::get_public_ip().unwrap_or("0.0.0.0".into());
                 let _ = send_email(config, ip);
             }
@@ -68,31 +73,59 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         // The config is read in each loop to allow for dynamic changes
         let config = json_handler::read_json_as_value(&constants::get_config_path()).to_config();
 
-        // Debug print the config (to be removed later)
-        config.print();
-
         // Get the current public IP
         let public_ip = match ip_check::get_public_ip() {
-            Ok(ip) => ip,
+            Ok(ip) => {
+                // Reset sequential failures on success
+                if config.sequential_failures != 0 {
+                    json_handler::write_config("sequentialFailures", Value::Number(0.into()));
+                }
+
+                ip
+            }
             Err(e) => {
-                eprintln!("Error getting public IP: {:?}", e);
+                let failures = config.sequential_failures + 1;
+                json_handler::write_config("sequentialFailures", Value::Number(failures.into()));
+
+                if failures >= config.failure_threshold {
+                    eprintln!(
+                        "Failed to get public IP {} times. Sending alert email.",
+                        failures
+                    );
+                    let _ = send_email(
+                        config.clone(),
+                        format!(
+                            "Could not retrieve IP, sequential error threshold reached: {}",
+                            failures
+                        ),
+                    );
+                    json_handler::write_config("sequentialFailures", Value::Number(0.into()));
+                } else {
+                    eprintln!(
+                        "Failed to get public IP {} times. Sequential failures: {}",
+                        e, failures
+                    );
+                }
                 sleep(Duration::from_secs(config.check_interval_minutes * 60));
                 continue;
             }
         };
 
-        // Debug print the public IP (to be removed later)
-        println!("Public IP: {}", public_ip);
-
         // If the IP hasn't changed, wait and check again
         if public_ip == config.ip_address {
             println!("IP has not changed.");
-        } 
+        }
         // If the IP has changed, update the config and send an email
         else {
-            println!("IP has changed! Old: {}, New: {}", config.ip_address, public_ip);
+            println!(
+                "IP has changed! Old: {}, New: {}",
+                config.ip_address, public_ip
+            );
             json_handler::write_config("ipAddress", Value::String(public_ip.clone()));
-            let _ = send_email(config.clone(), public_ip);
+            let _ = send_email(
+                config.clone(),
+                format!("Hello,\nYour public IP has changed to {}.", public_ip),
+            );
         }
 
         // Wait for the specified interval before checking again
@@ -100,19 +133,20 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-fn send_email(config: Config, new_ip_address: String) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn send_email(
+    config: Config,
+    message: String,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Define the email
     let email = Message::builder()
         .from(
             format!("IP Change Notifier <{}>", config.email_address)
                 .parse()
-                .unwrap(),
+                .unwrap_or_else(|_| return "IP Change Notifier <unknown>".parse().unwrap()),
         )
-        .to(format!("{}", config.recipient_address)
-            .parse()
-            .unwrap())
+        .to(format!("{}", config.recipient_address).parse().unwrap())
         .subject("Your IP Changed!")
-        .body(format!("Hello,\nYour public IP has changed to {}.", new_ip_address)) 
+        .body(format!("{}", message))
         .unwrap();
 
     // Set up the SMTP client
@@ -134,7 +168,10 @@ fn send_email(config: Config, new_ip_address: String) -> std::result::Result<(),
 
 fn help() {
     println!("Display this message: -h");
-    println!("Set the value of something in the config: -c <property> <value>\nemailAddress, emailPassword, emailSMTPHost, emailSMTPPort, ipAddress, recipientAddress");
+    println!(
+        "Set the value of something in the config: -c <property> <value>\nemailAddress, emailPassword, emailSMTPHost, emailSMTPPort, ipAddress, recipientAddress, failureThreshold, checkIntervalMinutes"
+    );
     println!("Print config: -p");
     println!("Send test email: -t");
+    println!("No arguments will run the program normally.");
 }
