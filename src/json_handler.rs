@@ -359,7 +359,9 @@ fn get_default_config() -> Value {
         "emailSMTPPort": 465,
         "recipientAddress": "person@example.com",
         "checkIntervalMinutes": 15,
-        "ipAddress": "127.0.0.1"
+        "ipAddress": "127.0.0.1",
+        "sequentialFailures": 0,
+        "failureThreshold": 10,
     })
 }
 
