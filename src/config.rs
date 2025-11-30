@@ -13,6 +13,8 @@
 pub struct Config {
     /// The email address used to send notifications.
     pub email_address: String,
+    /// The username to authenticate with (often the same as the email_address)
+    pub username: String,
     /// The password or app-specific password for the email account.
     pub email_password: String,
     /// The SMTP host for the email service.
@@ -46,6 +48,7 @@ impl Config {
     /// * `Config` - A new instance of the `Config` struct.
     pub fn new(
         email_address: String,
+        username: String,
         email_password: String,
         email_smtp_host: String,
         email_smtp_port: u16,
@@ -57,6 +60,7 @@ impl Config {
     ) -> Self {
         Config {
             email_address,
+            username,
             email_password,
             email_smtp_host,
             email_smtp_port,
@@ -71,6 +75,7 @@ impl Config {
     /// Prints the configuration details to the console for debugging purposes.
     pub fn print(&self) {
         println!("Email Address: {}", self.email_address);
+        println!("Username: {}", self.username);
         println!("Email Password: {}", self.email_password);
         println!("SMTP Host: {}", self.email_smtp_host);
         println!("SMTP Port: {}", self.email_smtp_port);
@@ -84,13 +89,14 @@ impl Config {
     /// * `serde_json::Value` - A JSON representation of the `Config` instance
     pub fn to_json(&self) -> serde_json::Value {
         serde_json::json!({
-            "email_address": self.email_address,
-            "email_password": self.email_password,
-            "email_smtp_host": self.email_smtp_host,
-            "email_smtp_port": self.email_smtp_port,
-            "recipient_address": self.recipient_address,
-            "check_interval_minutes": self.check_interval_minutes,
-            "ip_address": self.ip_address,
+            "emailAddress": self.email_address,
+            "username": self.username,
+            "emailPassword": self.email_password,
+            "emailSMTPHost": self.email_smtp_host,
+            "emailSMTPPort": self.email_smtp_port,
+            "recipientAddress": self.recipient_address,
+            "checkIntervalMinutes": self.check_interval_minutes,
+            "ipAddress": self.ip_address,
         })
     }
 }

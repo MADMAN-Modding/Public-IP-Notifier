@@ -150,7 +150,7 @@ fn send_email(
         .unwrap();
 
     // Set up the SMTP client
-    let creds = Credentials::new(config.email_address, config.email_password);
+    let creds = Credentials::new(config.username, config.email_password);
 
     // Open a remote connection to gmail
     let mailer = SmtpTransport::relay(&config.email_smtp_host)?
@@ -169,7 +169,7 @@ fn send_email(
 fn help() {
     println!("Display this message: -h");
     println!(
-        "Set the value of something in the config: -c <property> <value>\nemailAddress, emailPassword, emailSMTPHost, emailSMTPPort, ipAddress, recipientAddress, failureThreshold, checkIntervalMinutes"
+        "Set the value of something in the config: -c <property> <value>\nemailAddress, username, emailPassword, emailSMTPHost, emailSMTPPort, ipAddress, recipientAddress, failureThreshold, checkIntervalMinutes"
     );
     println!("Print config: -p");
     println!("Send test email: -t");

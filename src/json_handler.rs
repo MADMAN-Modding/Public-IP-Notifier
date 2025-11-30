@@ -381,6 +381,7 @@ impl ToConfig for serde_json::Value {
     fn to_config(&self) -> Config {
         // Extract each field from the JSON value, providing defaults if necessary
         let email_address = self.get("emailAddress").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let username = self.get("username").and_then(|v| v.as_str()).unwrap_or_default().to_string();
         let email_password = self.get("emailPassword").and_then(|v| v.as_str()).unwrap_or_default().to_string();
         let email_smtp_host = self.get("emailSMTPHost").and_then(|v| v.as_str()).unwrap_or_default().to_string();
         let email_smtp_port = self.get("emailSMTPPort").and_then(|v| v.as_u64()).unwrap_or(587) as u16;
@@ -392,6 +393,7 @@ impl ToConfig for serde_json::Value {
 
         Config::new(
             email_address,
+            username,
             email_password,
             email_smtp_host,
             email_smtp_port,
