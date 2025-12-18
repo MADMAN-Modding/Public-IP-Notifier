@@ -1,4 +1,4 @@
-#Welcome to Public IP Notifier!
+# Welcome to Public IP Notifier!
 
 This program will send an email to the configured address using the configured account
 
